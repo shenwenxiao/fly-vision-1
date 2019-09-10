@@ -28,7 +28,7 @@ int main() {
     }
 
     std::vector<std::string> imageNames;
-    getImagesNames(imageNames, "../testDataset/scaled_images/");
+    getImagesNames(imageNames, "../testDataset/scaled_images_5000/");
     if (imageNames.size() == 0) {
         std::cerr << "No images found" << "\n";
         return -1;
@@ -46,33 +46,56 @@ int main() {
     }
 
     std::vector<torch::jit::IValue> inputs;
-    torch::Tensor input;
+
+    torch::Tensor std = torch::from_blob(pixelStd, {3});
+    torch::Tensor mean = torch::from_blob(pixelMean, {3});
     torch::jit::IValue outputs;
     std::vector<c10::IValue> outputsList;
     cv::Mat image;
     std::vector<BoxList> boxLists;
     for(int i = 0; i < imageNames.size(); i++) {
+		clock_t time0 = clock();
         std::cout << imageNames[i] << "\n";
-        image = cv::imread("../testDataset/scaled_images/" + imageNames[i]);
+        image = cv::imread("../testDataset/scaled_images_5000/" + imageNames[i]);
         int oh = image.rows;
         int ow = image.cols;
-        input = getInput(image);
+        torch::Tensor input = getInput(image);
+        input -= mean;
+        input /= std;
+        input = input.permute({0, 3, 1, 2});
         int h = image.rows;
         int w = image.cols;
+		clock_t time1 = clock();
+		float total0 = (float)(time1 - time0) / CLOCKS_PER_SEC;
+		std::cout << "  Time of getting input:" << total0 << "\n";
 
         // Do inference
         inputs.clear();
         boxLists.clear();
-        inputs.push_back(input.to(at::kCUDA, at::ScalarType::Half));
+        //inputs.push_back(input.to(at::kCUDA, at::ScalarType::Half));
+        inputs.push_back(input.to(at::kCUDA, at::ScalarType::Float));
         outputs = module.forward(inputs);
+		clock_t time2 = clock();
+		float total1 = (float)(time2 - time1) / CLOCKS_PER_SEC;
+		std::cout << "  Time of doing inference:" << total1 << "\n";
+
+		
         outputsList = outputs.toTuple().get()->elements();
         for(int level = 0; level < LAVEL; level++) {
             forwardForSingleFeatureMap(boxLists, outputsList, level, h, w);
         }
         BoxList boxList = BoxList::catBoxLists(boxLists);
         BoxList result = selectOverAllLevels(boxList);
+		clock_t time3 = clock();
+		float total2 = (float)(time3 - time2) / CLOCKS_PER_SEC;
+		std::cout << "  Time of data processing:" << total2 << "\n";
 
         createJson(result, imageNames[i], categories ,oh, ow);
+		clock_t time4 = clock();
+		float total3 = (float)(time4 - time3) / CLOCKS_PER_SEC;
+		std::cout << "  Time of creating file:" << total3 << "\n";
+		float total4 = (float)(time4 - time0) / CLOCKS_PER_SEC;
+		std::cout << " Total Time of per frame:" << total4 << "\n";
     }
     return 0;
 }
@@ -87,12 +110,14 @@ bool loadModule(torch::jit::script::Module& module, std::string path) {
         return false;
     }
     std::cout << "Loaded model successfully in "<< path << std::endl;
-    module.to(at::kCUDA, at::ScalarType::Half);
+    //module.to(at::kCUDA, at::ScalarType::Half);
+    module.to(at::kCUDA, at::ScalarType::Float);
     module.eval();
     // Create a vector of inputs
     std::vector<torch::jit::IValue> inputs;
     torch::Tensor input = torch::ones({1, 3, 512, 512});
-    inputs.push_back(input.to(at::kCUDA, at::ScalarType::Half));
+    //inputs.push_back(input.to(at::kCUDA, at::ScalarType::Half));
+    inputs.push_back(input.to(at::kCUDA, at::ScalarType::Float));
     module.forward(inputs);
     std::cout << "Inited model successfully" << "\n";
     return true;
@@ -125,23 +150,27 @@ bool getCategories(std::vector<std::string>& categories, std::string path) {
     return true;
 }
 
+
 torch::Tensor getInput(cv::Mat& image) {
-    cv::Vec3b* image_ptr;
     if(image.rows > image.cols)
-        fx = MIN_SIZE / image.cols;
-    else
-        fx = MIN_SIZE / image.rows;
-    cv::resize(image, image, cv::Size(), fx, fx);
-    torch::Tensor input = torch::ones({1, 3, image.rows, image.cols});
-    for(int i = 0; i < image.rows; i++){
-        image_ptr = image.ptr<cv::Vec3b>(i);
-        for(int j = 0; j < image.cols; j++){
-            input[0][0][i][j] = (image_ptr[j][0] / 255.0 - pixelMean[0]) / pixelStd[0];
-            input[0][1][i][j] = (image_ptr[j][1] / 255.0 - pixelMean[1]) / pixelStd[1];
-            input[0][2][i][j] = (image_ptr[j][2] / 255.0 - pixelMean[2]) / pixelStd[2];
-        }
-    }
-    return input;
+		fx = MIN_SIZE / image.cols;
+	else
+		fx = MIN_SIZE / image.rows;
+	clock_t time0 = clock();
+	cv::resize(image, image, cv::Size(), fx, fx, cv::INTER_NEAREST);
+	clock_t time1 = clock();
+	float total0 = (float)(time1 - time0) / CLOCKS_PER_SEC;
+	std::cout << "      Time of resizing:" << total0 << "\n";
+    int height = image.rows;
+    int width = image.cols;
+	image.convertTo(image, CV_32FC3, 1 / 255.0);
+	torch::Tensor input = torch::empty({1, height, width, 3}, at::ScalarType::Float);
+    float *in__ = (float *)input.data_ptr();
+	memcpy(in__, image.data, sizeof(float) * 3 * height * width);
+	clock_t time2 = clock();
+	float total1 = (float)(time2 - time1) / CLOCKS_PER_SEC;
+	std::cout << "      Time of transforming:" << total1 << "\n";
+	return input;
 }
 
 at::Tensor computeLocationsPerLevel(int level, at::Tensor& features) {
