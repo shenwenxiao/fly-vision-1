@@ -23,7 +23,7 @@ find_package(Boost REQUIRED COMPONENTS
     thread
     date_time
 )
-find_package(OpenCV 3.3.1 REQUIRED)
+find_package(OpenCV)
 
 ################################################
 ## Declare ROS messages, services and actions ##

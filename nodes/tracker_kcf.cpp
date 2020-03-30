@@ -82,9 +82,6 @@ bool getImageStatus(void)
 
 //! ROS subscriber and publisher.
 image_transport::Subscriber imageSubscriber_;
-ros::Publisher pose_pub;
-
-
 cv::Rect selectRect;
 cv::Point origin;
 cv::Rect result;
@@ -131,6 +128,8 @@ bool MULTISCALE = true;
 bool SILENT = true;
 bool LAB = false;
 
+
+ros::Publisher locatePub;
 // Create KCFTracker object
 KCFTracker tracker(HOG, FIXEDWINDOW, MULTISCALE, LAB);
 
@@ -142,12 +141,11 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh); 
     ros::Rate loop_rate(30);
-    
+
     // 接收图像的话题
     imageSubscriber_ = it.subscribe("/camera/rgb/image_raw", 1, cameraCallback);
 
-    // 椭圆检测结果，xyz
-    pose_pub = nh.advertise<geometry_msgs::Pose>("/vision/ellipse", 1);
+    locatePub = nh.advertise<geometry_msgs::Pose>("/vision/traget", 1);
     
     sensor_msgs::ImagePtr msg_ellipse;
 
@@ -182,8 +180,16 @@ int main(int argc, char **argv)
         {
             result = tracker.update(frame);
             cv::rectangle(frame, result, cv::Scalar(255, 0, 0), 2, 8, 0);
+            
+            /*pub the position of target, x is right, y is down and origin is the center of frame*/
+            geometry_msgs::Pose pose_now;          
+            pose_now.position.x = float(result.x + result.width/2 -frame.cols/2)  / (frame.cols/2);
+            pose_now.position.y = float(result.y + result.height/2 -frame.rows/2) / (frame.rows/2);
+            locatePub.publish(pose_now);
+                       
         }
-
+        cv::line(frame, cv::Point(frame.cols/2-40, frame.rows/2), cv::Point(frame.cols/2+40, frame.rows/2), cv::Scalar(255,255,255), 2, 8);    
+        cv::line(frame, cv::Point(frame.cols/2, frame.rows/2-40), cv::Point(frame.cols/2, frame.rows/2+40), cv::Scalar(255,255,255), 2, 8);                           
         imshow(RGB_WINDOW, frame);
         waitKey(5);
         
