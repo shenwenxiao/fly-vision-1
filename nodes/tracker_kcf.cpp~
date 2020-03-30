@@ -186,7 +186,8 @@ int main(int argc, char **argv)
             pose_now.position.x = (result.x + result.width/2 -frame.cols/2) / frame.cols/2;
             pose_now.position.y = (result.y + result.height/2 -frame.rows/2) / frame.rows/2;
             locatePub.publish(pose_now);
-                       
+            
+            
         }
                         
         imshow(RGB_WINDOW, frame);
