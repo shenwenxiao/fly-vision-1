@@ -141,7 +141,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh); 
     ros::Rate loop_rate(30);
-    locatePub = nh.advertise<geometry_msgs::Pose>("/vision/fire", 10);
+
     // 接收图像的话题
     imageSubscriber_ = it.subscribe("/camera/rgb/image_raw", 1, cameraCallback);
 
@@ -186,8 +186,7 @@ int main(int argc, char **argv)
             pose_now.position.x = (result.x + result.width/2 -frame.cols/2) / frame.cols/2;
             pose_now.position.y = (result.y + result.height/2 -frame.rows/2) / frame.rows/2;
             locatePub.publish(pose_now);
-            
-            
+                       
         }
                         
         imshow(RGB_WINDOW, frame);

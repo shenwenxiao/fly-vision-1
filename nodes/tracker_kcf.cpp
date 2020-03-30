@@ -141,7 +141,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh); 
     ros::Rate loop_rate(30);
-    locatePub = nh.advertise<geometry_msgs::Pose>("/vision/fire", 10);
+
     // 接收图像的话题
     imageSubscriber_ = it.subscribe("/camera/rgb/image_raw", 1, cameraCallback);
 
