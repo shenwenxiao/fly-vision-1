@@ -15,7 +15,8 @@ from geometry_msgs.msg import Pose
 from net import SiamRPNvot
 from run_SiamRPN import SiamRPN_init, SiamRPN_track
 from utils import get_axis_aligned_bbox, cxy_wh_2_rect
-
+from idmanage import readid
+'''
 def draw_circle(event, x, y, flags, param):
     global x1, y1, x2, y2, drawing, init, flag, iamge
 
@@ -32,7 +33,6 @@ def draw_circle(event, x, y, flags, param):
 
         if event == cv2.EVENT_LBUTTONDOWN and flag == 1:
 
-            tempFlag = True
             drawing = True
             x1, y1 = x, y
             x2, y2 = -1, -1
@@ -45,7 +45,49 @@ def draw_circle(event, x, y, flags, param):
         flag = 1
         init = False
         x1, x2, y1, y2 = -1, -1, -1, -1
+'''
 
+def draw_circle(event, x, y, flags, param):
+    global x1, y1, x2, y2, drawing, init, flag, iamge, start
+
+    #if init is False:
+    if 1:
+        if event == cv2.EVENT_LBUTTONDOWN and flag == 1:
+            drawing = True
+            x1, y1 = x, y
+            x2, y2 = -1, -1
+            flag = 2
+            
+            init = False    
+            
+        #print(init)
+        x2, y2 = x, y
+        #if event == cv2.EVENT_LBUTTONDOWN and flag == 2:
+            #if drawing is True:
+                #x2, y2 = x, y
+        if event == cv2.EVENT_LBUTTONUP and flag == 2:
+            w = x2-x1
+            h = y2 -y1
+            if w>0 and w*h>50:
+                init = True   
+                start = False   
+                flag = 1
+                drawing = False
+                print(init)
+                print([x1,y1,x2,y2])
+            else:
+                x1, x2, y1, y2 = -1, -1, -1, -1
+        if drawing is True:
+            x2, y2 = x, y
+            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+  
+        
+    
+    if event == cv2.EVENT_MBUTTONDOWN:
+        flag = 1
+        init = False
+        x1, x2, y1, y2 = -1, -1, -1, -1
+        
 def callback(data):
     global image, getim
     bridge = CvBridge()
@@ -55,27 +97,34 @@ def callback(data):
     #print(getim)
 
 def showImage():
-    global x1, y1, x2, y2, drawing, init, flag, image, getim
+    
+    global x1, y1, x2, y2, drawing, init, flag, image, getim, start
+    rospy.init_node('RPN', anonymous=True)
+    
     flag=1
     init = False
     drawing = False
     getim = False
+    start = False
     x1, x2, y1, y2 = -1, -1, -1, -1
+    flag_lose = False
+    count_lose = 0
     
-    rospy.init_node('RPN', anonymous=True)
-    rospy.Subscriber('/camera/rgb/image_raw', Image, callback)
-    #rospy.spin()
-    rate = rospy.Rate(10)
-    pub = rospy.Publisher('/vision/traget', Pose, queue_size=10) 
-    cv2.namedWindow('image')
-    cv2.setMouseCallback('image', draw_circle)
-   
+    print('laoding model...........')
     net = SiamRPNvot()
     net.load_state_dict(torch.load(path + 'SiamRPNVOT.model'))
     net.eval().cuda()
+    z = torch.Tensor(1, 3, 127, 127)
+    net.temple(z.cuda())
+    x = torch.Tensor(1, 3, 271, 271)
+    net(x.cuda())
+    print('ready for starting!')
     
-    start = False
-    flag_lose = False
+    rospy.Subscriber('/camera/rgb/image_raw', Image, callback)
+    pub = rospy.Publisher('/vision/traget', Pose, queue_size=10) 
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image', draw_circle)
+    rate = rospy.Rate(10)
     while not rospy.is_shutdown():
       
         if getim:
@@ -107,7 +156,8 @@ def showImage():
                 pose.position.z = -1
             if drawing is True:
                 cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            
+            idd = readid(image)
+            cv2.putText(image, '#'+str(idd), (30,30), cv2.FONT_HERSHEY_SIMPLEX , 0.5, (0, 255, 255), 1)
             cx = int(image.shape[1]/2)
             cy = int(image.shape[0]/2)
             cv2.line(image,(cx-20,cy), (cx+20, cy), (255, 255, 255), 2)
