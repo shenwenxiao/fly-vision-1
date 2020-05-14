@@ -121,7 +121,7 @@ def showImage():
     print('ready for starting!')
     
     rospy.Subscriber('/camera/rgb/image_raw', Image, callback)
-    pub = rospy.Publisher('/vision/traget', Pose, queue_size=10) 
+    pub = rospy.Publisher('/vision/target', Pose, queue_size=10) 
     cv2.namedWindow('image')
     cv2.setMouseCallback('image', draw_circle)
     rate = rospy.Rate(10)
@@ -135,6 +135,7 @@ def showImage():
                 target_sz = np.array([int(x2-x1), int(y2-y1)])
                 state = SiamRPN_init(image, target_pos, target_sz, net)
                 start = True
+                flag_lose = False
                 continue
             if start is True:
                 state = SiamRPN_track(state, image)  # track
@@ -149,10 +150,10 @@ def showImage():
                     count_lose = count_lose + 1
                 else:
                     count_lose = 0
-                if count_lose > 5:
+                if count_lose > 4:
                     flag_lose = True
             if flag_lose is True:
-                cv2.putText(image, 'target is losed!', (200,200), cv2.FONT_HERSHEY_SIMPLEX , 2, (255,0,0), 3)
+                cv2.putText(image, 'target is lost!', (200,200), cv2.FONT_HERSHEY_SIMPLEX , 2, (255,0,0), 3)
                 pose.position.z = -1
             if drawing is True:
                 cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)

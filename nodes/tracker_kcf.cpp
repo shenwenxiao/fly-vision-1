@@ -145,7 +145,7 @@ int main(int argc, char **argv)
     // 接收图像的话题
     imageSubscriber_ = it.subscribe("/camera/rgb/image_raw", 1, cameraCallback);
 
-    locatePub = nh.advertise<geometry_msgs::Pose>("/vision/traget", 1);
+    locatePub = nh.advertise<geometry_msgs::Pose>("/vision/target", 1);
     
     sensor_msgs::ImagePtr msg_ellipse;
 
