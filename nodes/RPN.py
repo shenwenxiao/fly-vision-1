@@ -126,9 +126,9 @@ def showImage():
     pub = rospy.Publisher('/vision/target', Pose, queue_size=10) 
     cv2.namedWindow('image')
     cv2.setMouseCallback('image', draw_circle)
-    rate = rospy.Rate(10)
+    rate = rospy.Rate(30)
     i = 1
-    t = 0.0
+    t = time.time()
     fps = 0
     while not rospy.is_shutdown():
       
@@ -163,6 +163,7 @@ def showImage():
                     count_lose = 0
                 if count_lose > 4:
                     flag_lose = True
+                i = i + 1
                     
             if flag_lose is True:
                     cv2.putText(image, 'target is lost!', (200,200), cv2.FONT_HERSHEY_SIMPLEX , 2, (255,0,0), 3)
@@ -178,14 +179,11 @@ def showImage():
             cv2.line(image,(cx, cy-20), (cx, cy+20), (255, 255, 255), 2)
             
             pub.publish(pose)
-            
-            if start is True:    
-                t = time.time() - t1 + t
-                i = i + 1
+               
             if i > 5:
                 i = 1
-                fps = 5 / t
-                t = 0.0
+                fps = 5 / (time.time()-t)
+                t = time.time()
             cv2.putText(image, 'fps='+str(fps), (200,30), cv2.FONT_HERSHEY_SIMPLEX , 0.5, (0, 255, 255), 1)
             
             cv2.imshow('image', image)
