@@ -133,10 +133,12 @@ def showImage():
     while not rospy.is_shutdown():
       
         if getim:
+            t1 = time.time()
             idd = readid(image)
             
             pose = Pose()
             pose.position.z = 0
+            
             if start is False and init is True:
                 target_pos = np.array([int((x1+x2)/2), int((y1+y2)/2)])
                 target_sz = np.array([int(x2-x1), int(y2-y1)])
@@ -144,11 +146,10 @@ def showImage():
                 start = True
                 flag_lose = False
                 continue
+                
             if start is True:
-                t1 = time.time()
-                state = SiamRPN_track(state, image)  # track
-                t = time.time() - t1 + t
-                i = i + 1
+            
+                state = SiamRPN_track(state, image)  # track              
                 res = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
                 res = [int(l) for l in res]
                 cv2.rectangle(image, (res[0], res[1]), (res[0] + res[2], res[1] + res[3]), (0, 255, 255), 2)
@@ -162,18 +163,14 @@ def showImage():
                     count_lose = 0
                 if count_lose > 4:
                     flag_lose = True
+                    
             if flag_lose is True:
-                cv2.putText(image, 'target is lost!', (200,200), cv2.FONT_HERSHEY_SIMPLEX , 2, (255,0,0), 3)
-                pose.position.z = -1
-            if drawing is True:
-                
+                    cv2.putText(image, 'target is lost!', (200,200), cv2.FONT_HERSHEY_SIMPLEX , 2, (255,0,0), 3)
+                    pose.position.z = -1
+                   
+            if drawing is True:              
                 cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
             
-            if i > 5:
-                i = 1
-                fps = 5 / t
-                t = 0.0
-            cv2.putText(image, 'fps='+str(fps), (200,30), cv2.FONT_HERSHEY_SIMPLEX , 0.5, (0, 255, 255), 1)
             cv2.putText(image, '#'+str(idd), (30,30), cv2.FONT_HERSHEY_SIMPLEX , 0.5, (0, 255, 255), 1)
             cx = int(image.shape[1]/2)
             cy = int(image.shape[0]/2)
@@ -181,6 +178,16 @@ def showImage():
             cv2.line(image,(cx, cy-20), (cx, cy+20), (255, 255, 255), 2)
             
             pub.publish(pose)
+            
+            if start is True:    
+                t = time.time() - t1 + t
+                i = i + 1
+            if i > 5:
+                i = 1
+                fps = 5 / t
+                t = 0.0
+            cv2.putText(image, 'fps='+str(fps), (200,30), cv2.FONT_HERSHEY_SIMPLEX , 0.5, (0, 255, 255), 1)
+            
             cv2.imshow('image', image)
             cv2.waitKey(1)
             getim = False
