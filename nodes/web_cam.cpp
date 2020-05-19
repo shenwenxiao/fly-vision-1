@@ -27,6 +27,8 @@ int main(int argc, char **argv)
 
     // 用系统默认驱动读取摄像头0，使用其他摄像头ID，请在这里修改
     cv::VideoCapture cap(0);
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, 1920);
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
     cv::Mat frame;
 
     sensor_msgs::ImagePtr msg;

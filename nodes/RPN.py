@@ -5,11 +5,6 @@ path = sys.path[0]
 path = path[0:-5] + 'third-party/DaSiamRPN/'
 sys.path.append(path)
 
-path = sys.path[0]
-path = path[0:-5] + 'third-party/id_management/'
-sys.path.append(path)
-
-
 import rospy
 import cv2
 import torch
@@ -116,9 +111,7 @@ def showImage():
     x1, x2, y1, y2 = -1, -1, -1, -1
     flag_lose = False
     count_lose = 0
-    while(1):
-        im = 
-    '''
+
     print('laoding model...........')
     net = SiamRPNvot()
     net.load_state_dict(torch.load(path + 'SiamRPNVOT.model'))
@@ -134,6 +127,9 @@ def showImage():
     cv2.namedWindow('image')
     cv2.setMouseCallback('image', draw_circle)
     rate = rospy.Rate(10)
+    i = 1
+    t = 0.0
+    fps = 0
     while not rospy.is_shutdown():
       
         if getim:
@@ -151,8 +147,8 @@ def showImage():
             if start is True:
                 t1 = time.time()
                 state = SiamRPN_track(state, image)  # track
-                t2 = time.time()
-                
+                t = time.time() - t1 + t
+                i = i + 1
                 res = cxy_wh_2_rect(state['target_pos'], state['target_sz'])
                 res = [int(l) for l in res]
                 cv2.rectangle(image, (res[0], res[1]), (res[0] + res[2], res[1] + res[3]), (0, 255, 255), 2)
@@ -172,6 +168,12 @@ def showImage():
             if drawing is True:
                 
                 cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            
+            if i > 5:
+                i = 1
+                fps = 5 / t
+                t = 0.0
+            cv2.putText(image, 'fps='+str(fps), (200,30), cv2.FONT_HERSHEY_SIMPLEX , 0.5, (0, 255, 255), 1)
             cv2.putText(image, '#'+str(idd), (30,30), cv2.FONT_HERSHEY_SIMPLEX , 0.5, (0, 255, 255), 1)
             cx = int(image.shape[1]/2)
             cy = int(image.shape[0]/2)
@@ -184,7 +186,7 @@ def showImage():
             getim = False
 
         rate.sleep()
-    '''
+    
 if __name__ == '__main__':
     showImage()
 
