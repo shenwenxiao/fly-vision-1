@@ -14,6 +14,7 @@
 #include "std_msgs/Int32MultiArray.h"
 #include "id_management.h"
 
+#define delay 2
 
 using namespace std;
 using namespace cv;
@@ -105,10 +106,13 @@ void onMouse(int event, int x, int y, int, void*)
 ros::Publisher pub_bbox;
 std_msgs::Int32MultiArray bbox;
 int id = 0;
+ros::Publisher locatePub;
+geometry_msgs::Pose pose_now; 
 void timerCallback(const ros::TimerEvent& event)
 {
     pub_bbox.publish(bbox);
     printf("id=%d\n",id);
+    locatePub.publish(pose_now);
 }
 
 int main(int argc, char **argv)
@@ -123,9 +127,9 @@ int main(int argc, char **argv)
     cv::setMouseCallback("GroundStation", onMouse, 0);    
     
     pub_bbox = nh.advertise<std_msgs::Int32MultiArray>("bbox", 40);
-   
+    locatePub = nh.advertise<geometry_msgs::Pose>("/vision/bbox", 1);
     // 接收图像的话题
-    imageSubscriber2 = it.subscribe("/camera/rgb/trackmsg", 1, cameraCallback);
+    imageSubscriber2 = it.subscribe("/camera/rgb/image_raw", 1, cameraCallback);
     //const auto wait_duration = std::chrono::milliseconds(2000)
     ros::Timer timer;
     while (ros::ok()){
@@ -147,9 +151,16 @@ int main(int argc, char **argv)
         if(selected){
             id = IDManagement::read_id(frame);
             bbox.data={0,id,selectRect.x,selectRect.y,selectRect.width,selectRect.height};
+                     
+            pose_now.position.x = id;
+            pose_now.orientation.x = selectRect.x;
+            pose_now.orientation.y = selectRect.y;
+            pose_now.orientation.w = selectRect.x + selectRect.width;
+            pose_now.orientation.z = selectRect.x + selectRect.height;
+            
             
             //ros::Duration(1).sleep();
-            timer = nh.createTimer(ros::Duration(1), timerCallback, true);
+            timer = nh.createTimer(ros::Duration(delay), timerCallback, true);
             selected=false;
         }
        
