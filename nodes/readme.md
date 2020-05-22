@@ -5,9 +5,9 @@
 4. 节点RPN_getbbox是地面站框选目标启动跟踪，暂时定的topic名称 '/vision/bbox'， <geometry_msgs/Pose.h> 格式, Quaternion. x,y,w,z对应左上角坐标和尺度x,y,w,h,  position的X代表帧数。
 
 5. 运行以下节点模拟选择目标，算法从历史帧里读取照片， GroundStation_demo里的第15行宏定义delay表示通信延迟的时间，现在设定的是2秒，根据需要更改
-   rosrun fly-vision web_cam
-   rosrun fly-vision add_memery
-   rosrun fly-vision GroundStation_demo
-   rosrun fly-vision RPN_getbbox
+   rosrun fly-vision web_cam;
+   rosrun fly-vision add_memery;
+   rosrun fly-vision GroundStation_demo;
+   rosrun fly-vision RPN_getbbox;
 
  
