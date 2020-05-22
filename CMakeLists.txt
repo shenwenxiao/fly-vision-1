@@ -219,22 +219,22 @@ add_executable(read_id
 )
 target_link_libraries(read_id ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBS} id_management)
 
-add_executable(add_memery
-    nodes/add_memery.cpp
+add_executable(add_memory
+    nodes/add_memory.cpp
 )
-target_link_libraries(add_memery ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBS} id_management imagequeue
+target_link_libraries(add_memory ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBS} id_management imagequeue
     -lrt -DBUILD_TEST=OFF)
 
-add_executable(read_memery
-    nodes/read_memery.cpp
+add_executable(read_memory
+    nodes/read_memory.cpp
 )
-target_link_libraries(read_memery ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBS} imagequeue
+target_link_libraries(read_memory ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBS} imagequeue
     -lrt -DBUILD_TEST=OFF)
 
-add_executable(test_memery
-    nodes/test_memery.cpp
+add_executable(test_memory
+    nodes/test_memory.cpp
 )
-target_link_libraries(test_memery ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBS} id_management imagequeue
+target_link_libraries(test_memory ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBS} id_management imagequeue
     -lrt -DBUILD_TEST=OFF)
 
 add_executable(sleep
