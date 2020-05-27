@@ -10,4 +10,6 @@
    rosrun fly-vision GroundStation_demo;
    rosrun fly-vision RPN_getbbox;
 
+6. siamBAN 网络下载地址： https://drive.google.com/file/d/1SJwPUpTQm6xL44-8jLvDrSMhOzVsbLAZ/view?usp=sharing， 放到/third-party/siamban/pretrained下
+7. siamRPN++ 网络下载地址：https://drive.google.com/open?id=1Q4-1563iPwV6wSf_lBHDj5CPFiGSlEPG 放到/third-party/pysot/pretrained下
  
