@@ -88,6 +88,8 @@ def draw_circle(event, x, y, flags, param):
     if event == cv2.EVENT_MBUTTONDOWN:
         flag = 1
         init = False
+        start = False
+        drawing = False
         x1, x2, y1, y2 = -1, -1, -1, -1
         
 def callback(data):
